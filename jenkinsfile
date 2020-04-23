@@ -1,0 +1,37 @@
+pipeline {
+   agent { label 'master' }
+    tools{
+        maven "maven3"
+    }
+   stages {
+      stage('scm') {
+         steps {
+            // Get some code from a GitHub repository
+            git credentialsId: 'Git_credentials', url: 'https://github.com/Madhu768/spring3-mvc-maven-xml-hello-world.git'
+         }
+      }
+	 stage('Build') {
+	    steps {
+	        
+	     sh "mvn clean package" 
+	     
+	    }
+	 }
+	stage('artifact') {
+	    steps {
+	         archiveArtifacts 'target/*.war'
+	    }
+	}
+	stage('deploy'){
+	    steps {
+	       withCredentials([usernameColonPassword(credentialsId: 'Tomcat-creds', variable: 'Tomcat_secrets')]) {
+	       
+	     sh "curl -u ${Tomcat_secrets} -T /var/lib/jenkins/workspace/Git_Maven_Pipeline/target/spring3-mvc-maven-xml-hello-world-1.0-SNAPSHOT.war 'http://ec2-18-191-204-149.us-east-2.compute.amazonaws.com:8081/manager/text/deploy?path=/jenkins_deploy&update=true' " 
+	     //manager supported parameters text/deploy?path=/jenkins_deploy(your name as per your wish)&update=true (the new deployment can go through other wise it will through error as the deployment completed for next time)
+	     // we are doing the deployment through the curl command
+	      }
+	    }   
+   }
+}
+}
+
